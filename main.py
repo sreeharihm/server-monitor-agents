@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+import sys
+from pathlib import Path
 
 import yaml
 from apscheduler.schedulers.blocking import BlockingScheduler
@@ -18,9 +20,33 @@ from agents.master_agent.a2a_connector import A2AConnector
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("agent")
 
-load_dotenv()
+ROOT = Path(__file__).resolve().parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
-with open("config.yaml") as f:
+
+def _resolve_runtime_path(*parts: str) -> Path:
+    relative_path = Path(*parts)
+    if getattr(sys, "frozen", False):
+        candidates = []
+        if hasattr(sys, "_MEIPASS"):
+            candidates.append(Path(sys._MEIPASS) / relative_path)
+        candidates.append(Path(sys.executable).resolve().parent / relative_path)
+        candidates.append(Path.cwd() / relative_path)
+        for candidate in candidates:
+            if candidate.exists():
+                return candidate
+        return Path(sys.executable).resolve().parent / relative_path
+    return ROOT / relative_path
+
+
+CONFIG_PATH = _resolve_runtime_path("config.yaml")
+DOTENV_PATH = _resolve_runtime_path(".env")
+OUTPUT_DIR = _resolve_runtime_path("output", "incidents")
+
+load_dotenv(DOTENV_PATH)
+
+with open(CONFIG_PATH, encoding="utf-8") as f:
     CFG = yaml.safe_load(f)
 
 _a2a_cfg = CFG.get("a2a_agents", {})
@@ -37,8 +63,7 @@ CONNECTORS = [
 
 detector = AnomalyDetector()
 
-OUTPUT_DIR = "output/incidents"
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def poll():
@@ -83,14 +108,14 @@ def poll():
                 for a in incident.anomalies
             ],
         }
-        path = os.path.join(OUTPUT_DIR, f"{incident.id}.json")
-        with open(path, "w") as out:
+        path = OUTPUT_DIR / f"{incident.id}.json"
+        with open(path, "w", encoding="utf-8") as out:
             json.dump(report, out, indent=2, default=str)
 
         log.warning(f"INCIDENT {incident.id}: {incident.summary} (confidence {incident.confidence}%) -> {path}")
 
 
-if __name__ == "__main__":
+def main() -> None:
     poll()  # run once immediately so you see output right away
 
     interval = CFG.get("poll_interval_minutes", 5)
@@ -98,3 +123,7 @@ if __name__ == "__main__":
     scheduler.add_job(poll, "interval", minutes=interval)
     log.info(f"scheduler started, polling every {interval} min. Ctrl+C to stop.")
     scheduler.start()
+
+
+if __name__ == "__main__":
+    main()
