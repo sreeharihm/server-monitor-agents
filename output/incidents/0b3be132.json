@@ -1,0 +1,24 @@
+{
+  "id": "0b3be132",
+  "created_at": "2026-07-25T09:37:00",
+  "summary": "1 anomaly detected across 1 service(s): prometheus:k8s-node-1.",
+  "root_cause": "Isolated anomaly on prometheus:k8s-node-1 (node_cpu_usage_percent): value 65.00 vs baseline 49.15 (z-score 2.7). No correlated signal found in other monitored services within the configured lag window.",
+  "confidence": 50,
+  "actions": [
+    "Inspect prometheus:k8s-node-1 dashboards/logs around 2026-07-25T09:37:00",
+    "Check recent deploys or config changes to the affected service(s)",
+    "Confirm whether the anomaly has self-resolved or is still active"
+  ],
+  "anomalies": [
+    {
+      "source": "prometheus",
+      "service": "k8s-node-1",
+      "metric": "node_cpu_usage_percent",
+      "value": 65.0,
+      "baseline_mean": 49.14875,
+      "zscore": 2.736880644488874,
+      "severity": "warning",
+      "timestamp": "2026-07-25T09:37:00"
+    }
+  ]
+}

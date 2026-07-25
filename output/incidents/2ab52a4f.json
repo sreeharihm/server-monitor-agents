@@ -1,0 +1,75 @@
+{
+  "id": "2ab52a4f",
+  "created_at": "2026-07-25T09:47:00",
+  "summary": "6 anomalies detected across 6 service(s): cloudwatch:load-balancer, cloudwatch:order-db, cloudwatch:web-api, prometheus:auth-service, prometheus:k8s-node-1, prometheus:payment-service.",
+  "root_cause": "Anomaly on cloudwatch:web-api (cpu_utilization_pct) occurred first, followed within 1.0 min by anomalies on cloudwatch:load-balancer, cloudwatch:order-db, prometheus:auth-service, prometheus:k8s-node-1, prometheus:payment-service. This temporal ordering suggests web-api is the likely upstream trigger, but this is a correlation, not a confirmed causal link -- verify against logs and traces before acting on it.",
+  "confidence": 85,
+  "actions": [
+    "Page on-call -- this incident is above the critical threshold",
+    "Inspect cloudwatch:web-api dashboards/logs around 2026-07-25T09:47:00",
+    "Check recent deploys or config changes to the affected service(s)",
+    "Confirm whether the anomaly has self-resolved or is still active"
+  ],
+  "anomalies": [
+    {
+      "source": "cloudwatch",
+      "service": "web-api",
+      "metric": "cpu_utilization_pct",
+      "value": 87.75,
+      "baseline_mean": 31.8455,
+      "zscore": 6.183740408156841,
+      "severity": "critical",
+      "timestamp": "2026-07-25T09:47:00"
+    },
+    {
+      "source": "cloudwatch",
+      "service": "order-db",
+      "metric": "database_connections",
+      "value": 115.9,
+      "baseline_mean": 26.858999999999998,
+      "zscore": 16.587630081776588,
+      "severity": "critical",
+      "timestamp": "2026-07-25T09:47:00"
+    },
+    {
+      "source": "cloudwatch",
+      "service": "load-balancer",
+      "metric": "http_5xx_count",
+      "value": 83.51,
+      "baseline_mean": 2.1095,
+      "zscore": 90.79344394283295,
+      "severity": "critical",
+      "timestamp": "2026-07-25T09:47:00"
+    },
+    {
+      "source": "prometheus",
+      "service": "payment-service",
+      "metric": "http_request_duration_ms",
+      "value": 912.6,
+      "baseline_mean": 154.138,
+      "zscore": 39.714523308402114,
+      "severity": "critical",
+      "timestamp": "2026-07-25T09:48:00"
+    },
+    {
+      "source": "prometheus",
+      "service": "auth-service",
+      "metric": "http_request_duration_ms",
+      "value": 691.65,
+      "baseline_mean": 97.98,
+      "zscore": 43.174394655990724,
+      "severity": "critical",
+      "timestamp": "2026-07-25T09:48:00"
+    },
+    {
+      "source": "prometheus",
+      "service": "k8s-node-1",
+      "metric": "node_cpu_usage_percent",
+      "value": 86.54,
+      "baseline_mean": 54.2095,
+      "zscore": 5.098001993054576,
+      "severity": "critical",
+      "timestamp": "2026-07-25T09:48:00"
+    }
+  ]
+}

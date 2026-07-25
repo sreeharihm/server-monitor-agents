@@ -1,0 +1,24 @@
+{
+  "id": "ada2eda5",
+  "created_at": "2026-07-25T10:03:00",
+  "summary": "1 anomaly detected across 1 service(s): cloudwatch:order-db.",
+  "root_cause": "Isolated anomaly on cloudwatch:order-db (database_connections): value 38.39 vs baseline 27.84 (z-score 3.3). No correlated signal found in other monitored services within the configured lag window.",
+  "confidence": 50,
+  "actions": [
+    "Inspect cloudwatch:order-db dashboards/logs around 2026-07-25T10:03:00",
+    "Check recent deploys or config changes to the affected service(s)",
+    "Confirm whether the anomaly has self-resolved or is still active"
+  ],
+  "anomalies": [
+    {
+      "source": "cloudwatch",
+      "service": "order-db",
+      "metric": "database_connections",
+      "value": 38.39,
+      "baseline_mean": 27.837500000000002,
+      "zscore": 3.2795915829924764,
+      "severity": "warning",
+      "timestamp": "2026-07-25T10:03:00"
+    }
+  ]
+}
