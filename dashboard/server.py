@@ -15,6 +15,7 @@ Or via run_all.py (port 8000).
 
 import json
 import logging
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -29,10 +30,25 @@ log = logging.getLogger("dashboard")
 
 PORT = 8000
 
-# Paths are resolved relative to this file so the server works regardless
-# of the working directory it is launched from.
 _THIS_DIR = Path(__file__).parent
-_INCIDENTS_DIR = _THIS_DIR.parent / "output" / "incidents"
+
+
+def _resolve_runtime_path(*parts: str) -> Path:
+    relative_path = Path(*parts)
+    if getattr(sys, "frozen", False):
+        candidates = []
+        if hasattr(sys, "_MEIPASS"):
+            candidates.append(Path(sys._MEIPASS) / relative_path)
+        candidates.append(Path(sys.executable).resolve().parent / relative_path)
+        candidates.append(Path.cwd() / relative_path)
+        for candidate in candidates:
+            if candidate.exists():
+                return candidate
+        return Path(sys.executable).resolve().parent / relative_path
+    return _THIS_DIR.parent / relative_path
+
+
+_INCIDENTS_DIR = _resolve_runtime_path("output", "incidents")
 _INDEX_HTML = _THIS_DIR / "static" / "index.html"
 
 app = FastAPI(title="Monitor Agent Dashboard", version="1.0.0")

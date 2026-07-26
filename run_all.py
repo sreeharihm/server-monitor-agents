@@ -12,15 +12,22 @@ What it does:
 """
 
 import logging
+import os
 import signal
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 import httpx
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("run-all")
+
+ROOT = Path(__file__).resolve().parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+os.chdir(ROOT)
 
 _SUB_AGENTS = [
     {
@@ -60,7 +67,40 @@ def _wait_for_health(name: str, port: int) -> bool:
     return False
 
 
+def _build_component_command(name: str, module: str | None = None) -> list[str]:
+    if getattr(sys, "frozen", False):
+        return [sys.executable, "--mode", name]
+    if module is None:
+        return [sys.executable, str(ROOT / "main.py")]
+    return [sys.executable, str(ROOT / "run_all.py"), "--mode", name]
+
+
+def _run_component(mode: str) -> None:
+    if mode == "dashboard":
+        import uvicorn
+
+        uvicorn.run("dashboard.server:app", host="0.0.0.0", port=8000, log_level="info")
+    elif mode == "cloudwatch-agent":
+        import uvicorn
+
+        uvicorn.run("agents.cloudwatch_agent.server:app", host="0.0.0.0", port=8001, log_level="info")
+    elif mode == "prometheus-agent":
+        import uvicorn
+
+        uvicorn.run("agents.prometheus_agent.server:app", host="0.0.0.0", port=8002, log_level="info")
+    elif mode == "master":
+        from main import main as run_master
+
+        run_master()
+    else:
+        raise ValueError(f"unsupported mode: {mode}")
+
+
 def main() -> None:
+    if len(sys.argv) > 2 and sys.argv[1] == "--mode":
+        _run_component(sys.argv[2])
+        return
+
     procs: list = []
 
     def _shutdown(sig, frame):  # noqa: ANN001
@@ -84,7 +124,7 @@ def main() -> None:
     for agent in _SUB_AGENTS:
         log.info(f"starting {agent['name']} on port {agent['port']}...")
         p = subprocess.Popen(
-            [sys.executable, "-m", agent["module"]],
+            _build_component_command(agent["name"], agent["module"]),
             # Inherit stdout/stderr so sub-agent logs appear in this terminal.
             stdout=sys.stdout,
             stderr=sys.stderr,
@@ -106,7 +146,11 @@ def main() -> None:
     # ------------------------------------------------------------------ #
     log.info("all sub-agents ready — starting master agent (main.py)...")
     log.info("dashboard available at http://localhost:8000")
-    master = subprocess.Popen([sys.executable, "main.py"], stdout=sys.stdout, stderr=sys.stderr)
+    master = subprocess.Popen(
+        _build_component_command("master"),
+        stdout=sys.stdout,
+        stderr=sys.stderr,
+    )
     procs.append(master)
     master.wait()
 
